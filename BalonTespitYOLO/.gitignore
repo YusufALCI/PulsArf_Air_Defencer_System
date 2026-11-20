@@ -1,0 +1,6 @@
+# Yerel veri ve eğitim çıktıları repoya girmez
+indir/
+veri/
+runs/
+__pycache__/
+*.pt
