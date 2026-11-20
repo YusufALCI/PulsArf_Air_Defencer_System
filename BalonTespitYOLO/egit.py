@@ -4,8 +4,8 @@ Kırmızı / mavi balon modeli eğitimi
 Önce:  python veri_hazirla.py indir/gokhisarmain ...   (veri/balon/data.yaml oluşur)
 
 Çalıştırma:
-    python egit.py                         # YOLO11s, 1280 boyut
-    python egit.py --model yolo11n.pt      # daha küçük/hızlı model
+    python egit.py                         # YOLOv8n, 640 boyut
+    python egit.py --model yolov8s.pt      # daha büyük/doğru model
     python egit.py --imgsz 640 --epochs 30 # hızlı ilk deneme
 
 Sonuç: runs/balon/<ad>/weights/best.pt
@@ -22,8 +22,8 @@ from ultralytics import YOLO
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", default="veri/balon/data.yaml")
-    ap.add_argument("--model", default="yolo11s.pt", help="yolo11n.pt / yolo11s.pt / yolo26s.pt ...")
-    ap.add_argument("--imgsz", type=int, default=1280, help="küçük hedef için 1280; hızlı deneme için 640")
+    ap.add_argument("--model", default="yolov8n.pt", help="yolov8n.pt / yolov8s.pt (takım YOLOv8 kullanıyor)")
+    ap.add_argument("--imgsz", type=int, default=640, help="Roboflow seti 640x640; kendi tam çözünürlüklü verinizde 1280")
     ap.add_argument("--epochs", type=int, default=100)
     ap.add_argument("--batch", type=int, default=-1, help="-1: GPU belleğine göre otomatik")
     ap.add_argument("--ad", default=None, help="çıktı klasörünün adı")
@@ -38,15 +38,17 @@ def main():
               "CUDA'lı torch kurulumu için NOTLAR.md'ye bakın.")
 
     model = YOLO(args.model)
+    ad = args.ad or f"{args.model.split('.')[0]}_{args.imgsz}"
+    # Tam yol: göreli verilirse Ultralytics runs/detect/ altına iç içe yazıyor
+    proje = str(Path("runs/balon").resolve())
     model.train(
         data=args.data,
         imgsz=args.imgsz,
         epochs=args.epochs,
         batch=args.batch if cihaz != "cpu" else 4,
         device=cihaz,
-        # Tam yol: göreli verilirse Ultralytics runs/detect/ altına iç içe yazıyor
-        project=str(Path("runs/balon").resolve()),
-        name=args.ad or f"{args.model.split('.')[0]}_{args.imgsz}",
+        project=proje,
+        name=ad,
         patience=20,       # 20 epoch iyileşme yoksa dur
         # Renk ayrımı sınıf bilgisi: renk tonu kaydırması kırmızıyı maviye çevirebilir, kapalı.
         hsv_h=0.0,
@@ -58,7 +60,9 @@ def main():
         workers=4,         # Windows'ta çok yüksek değer sorun çıkarabiliyor
     )
 
-    metrikler = model.val(data=args.data, imgsz=args.imgsz, split="test" if _test_var(args.data) else "val")
+    # Test ölçümü eğitim klasörünün yanına yazılır: runs/balon/<ad>_test
+    metrikler = model.val(data=args.data, imgsz=args.imgsz, split="test" if _test_var(args.data) else "val",
+                          project=proje, name=f"{ad}_test")
     print(f"\nmAP50: {metrikler.box.map50:.3f}   mAP50-95: {metrikler.box.map:.3f}")
     print("Sınıf bazında mAP50:", {model.names[i]: round(float(v), 3)
                                    for i, v in zip(metrikler.box.ap_class_index, metrikler.box.ap50)})

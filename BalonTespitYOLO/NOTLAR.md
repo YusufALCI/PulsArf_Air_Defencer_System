@@ -66,13 +66,13 @@ python -c "import torch; print(torch.cuda.is_available())"
 ### Adım 5 – Eğit
 ```
 python egit.py --imgsz 640 --epochs 30    # hızlı ilk deneme
-python egit.py                            # asıl eğitim: YOLO11s, 1280
+python egit.py                            # asıl eğitim: YOLOv8n, 640
 ```
 Renk tonu augmentasyonu (`hsv_h`) kapalı. Sonuç: `runs/balon/<ad>/weights/best.pt`.
 
 ### Adım 6 – Kendi modelinle takip
 ```
-python balon_takip_pid.py --model runs/balon/yolo11s_1280/weights/best.pt
+python balon_takip_pid.py --model ../AIModels/balon_kirmizi_mavi_yolov8n.pt
 ```
 Model `red_balloon` sınıfı içerdiğinde kod **yalnızca kırmızıya** kilitlenir, maviyi takip etmez.
 
@@ -80,7 +80,7 @@ Model `red_balloon` sınıfı içerdiğinde kod **yalnızca kırmızıya** kilit
 `motor_komutu_gonder`, takım reposundaki `Pulsarf_ciftmotor.ino` (Yusuf dalı) ile uyumlu:
 `<dy,dx>` = Y ve X motoruna **göreli** adım sayısı (tamsayı). `<0,0>` = dur.
 ```
-python balon_takip_pid.py --model ../AIModels/balon_kirmizi_mavi_yolo11n.pt --kamera 1 --port COM9
+python balon_takip_pid.py --model ../AIModels/balon_kirmizi_mavi_yolov8n.pt --kamera 1 --port COM9
 python balon_takip_pid.py ... --ayna        # eski koddaki gibi görüntüyü aynala
 python balon_takip_pid.py ... --onde 0.1    # hareketli hedefte 0.1 sn ilerisine nişan al
 ```
@@ -111,7 +111,8 @@ Kamera (lens + ayarlar) → ön işleme (ölçekleme, kırpma) → YOLO tespiti 
 Kısa pozlama (birkaç ms), sabit beyaz dengesi, elle sabitlenmiş odak, tam çözünürlük, USB 3.0 port. Zoom yazılımla yapılır (kırpma).
 
 ### 3. Model seçimi
-- **YOLO11**: ana öneri.
+- **YOLOv8**: takımın seçimi (README). Kaynak çok, Jetson desteği oturmuş.
+- **YOLO11**: aynı boyutta biraz daha doğru; ileride karşılaştırılabilir.
 - **YOLO26**: en yeni, küçük hedefler için iyi; YOLO11 ile yan yana denenmeli.
 - YOLOv8: sağlam ama artık ilk tercih değil. YOLOv10: hızlı ama daha az doğru. YOLOv12: gerçek zamanlı kullanım için önerilmedi.
 - Boyut n veya s; Jetson'da TensorRT FP16 export.
@@ -153,7 +154,7 @@ Ayar sırası: `ki=0, kd=0` → kp'yi hafif salınıma kadar artır → kd ekle 
 ## Önerilen sıra
 1. Lensi değiştir, kamera ayarlarını manuele al.
 2. Kendi verini çek ve etiketle.
-3. YOLO11s ve YOLO26s'i 1280'de eğit, mesafeye göre karşılaştır.
+3. YOLOv8 ile eğit; kendi verinizle 1280'de mesafeye göre test et.
 4. Kırpma (takip modu) ve renk doğrulamayı ekle.
 5. ByteTrack + Kalman + PID'yi bağla.
 6. Gerekirse LiDAR ekle.
